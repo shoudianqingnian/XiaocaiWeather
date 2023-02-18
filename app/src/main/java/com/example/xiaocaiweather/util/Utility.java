@@ -5,6 +5,9 @@ import android.text.TextUtils;
 import com.example.xiaocaiweather.db.City;
 import com.example.xiaocaiweather.db.County;
 import com.example.xiaocaiweather.db.Province;
+import com.example.xiaocaiweather.gson.Weather;
+import com.example.xiaocaiweather.gson.WeatherNow;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -73,6 +76,18 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    //将服务器返回的JSON数据解析为实体类
+    public static WeatherNow handleWeatherNowResponse(String response){
+        try{
+            JSONObject jsonObject=new JSONObject(response);
+            String weatherContent=jsonObject.toString();
+            return new Gson().fromJson(weatherContent, WeatherNow.class);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

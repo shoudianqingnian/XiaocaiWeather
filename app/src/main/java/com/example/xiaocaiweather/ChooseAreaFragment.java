@@ -78,9 +78,6 @@ public class ChooseAreaFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-//        if(ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.INTERNET)!= PackageManager.PERMISSION_GRANTED){
-//            ActivityCompat.requestPermissions(getActivity(),new String[]{Manifest.permission.INTERNET},1);
-//        }
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -94,25 +91,25 @@ public class ChooseAreaFragment extends Fragment {
                     selectedCity = cityList.get(position);
                     queryCounties(); //请求县级数据并更新到界面上
                 }
-//                else if(currentLevel == LEVEL_COUNTY)
-//                {
-//                    String weatherId = countyList.get(position).getWeatherId();
-//
-//                    if(getActivity() instanceof MainActivity)
+                else if(currentLevel == LEVEL_COUNTY)
+                {
+                    String weatherId = countyList.get(position).getWeatherId();
+
+                    if(getActivity() instanceof MainActivity)
+                    {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id",weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    }
+//                    else if(getActivity() instanceof WeatherActivity)
 //                    {
-//                        Intent intent = new Intent(getActivity(), WeatherActivty.class);
-//                        intent.putExtra("weather_id",weatherId);
-//                        startActivity(intent);
-//                        getActivity().finish();
-//                    }
-//                    else if(getActivity() instanceof WeatherActivty)
-//                    {
-//                        WeatherActivty activity = (WeatherActivty)getActivity();
+//                        WeatherActivity activity = (WeatherActivity) getActivity();
 //                        activity.drawerLayout.closeDrawers();
 //                        activity.swipeRefresh.setRefreshing(true);
 //                        activity.requestWeather(weatherId);
 //                    }
-//                }
+                }
             }
         });
 
@@ -186,7 +183,7 @@ public class ChooseAreaFragment extends Fragment {
     {
         titleText.setText(selectedCity.getCityName());
         backButton.setVisibility(View.VISIBLE);
-        countyList = LitePal.where("cityid = ?", String.valueOf(selectedCity.getId())).find(County.class);            if(countyList.size() > 0)
+        countyList = LitePal.where("cityid = ?", String.valueOf(selectedCity.getId())).find(County.class);
         if(countyList.size()>0){
             dataList.clear();
             for (County county: countyList)
