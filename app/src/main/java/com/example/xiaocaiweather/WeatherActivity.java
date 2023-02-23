@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.Manifest;
 import android.content.SharedPreferences;
@@ -51,6 +52,9 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView comfortText; //舒适度
     private TextView carWashText; //洗车指数
     private TextView sportText;//运动建议
+
+    public SwipeRefreshLayout swipeRefreshLayout; //刷新框
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,55 +71,71 @@ public class WeatherActivity extends AppCompatActivity {
         comfortText=(TextView)findViewById(R.id.comfort_text);
         carWashText=(TextView)findViewById(R.id.car_wash_text);
         sportText=(TextView)findViewById(R.id.sport_text);
+        swipeRefreshLayout=(SwipeRefreshLayout)findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
+        String countyName=prefs.getString("countyname",null); //县名
         String nowMessage=prefs.getString("nowmessage",null);  //实时天气类信息
         String forecastMessage=prefs.getString("forecastmessage",null); //7天预报信息
         String comfortMessage=prefs.getString("comfortmessage",null); //天气指数信息
         String airMessage=prefs.getString("airmessage",null); //空气质量信息
 
+        String mysecrettoken="你的token"; //个人的（和风天气）访问token
         String weatherId=getIntent().getStringExtra("weather_id"); //获取weatherid
-        String countyname=getIntent().getStringExtra("countyname"); //获取县名
-        if(prefs.getString("countyname",null)!=null){
-            countyname=prefs.getString("countyname",null); //更新县名
-        }
-        String mysecrettoken="个人token"; //个人的（和风天气）访问token
         weatherLayout.setVisibility(View.INVISIBLE); //设置滚动界面不可见
         System.out.println("测试");
         System.out.println(weatherId);
         //判断数据是否有缺失
         if(nowMessage==null){//处理实时天气数据
             String requestUrl="https://devapi.qweather.com/v7/weather/now?location="+weatherId+"&key="+mysecrettoken; //设置请求数据的URL
-            requestWeather(requestUrl,0,countyname); //请求城市 当前实时天气信息
+            requestWeather(requestUrl,0); //请求城市 当前实时天气信息
         }
         else{
-            showNowWeatherInfo(nowMessage,countyname);//有缓存时直接展示实时天气数据
+            showNowWeatherInfo(nowMessage);//有缓存时直接展示实时天气数据
         }
         if(forecastMessage==null){ //处理预报天气数据
             String requestUrl="https://devapi.qweather.com/v7/weather/7d?location="+weatherId+"&key="+mysecrettoken; //设置请求数据的URL
-            requestWeather(requestUrl,1,countyname); //请求城市 7天的预报天气信息
+            requestWeather(requestUrl,1); //请求城市 7天的预报天气信息
         }
         else{
             showForecastWeatherInfo(forecastMessage);//有缓存时直接展示预报天气数据
         }
         if(comfortMessage==null){//处理舒适度数据
             String requestUrl="https://devapi.qweather.com/v7/indices/1d?type=1,2,8&location="+weatherId+"&key="+mysecrettoken; //设置请求数据的URL
-            requestWeather(requestUrl,2,countyname); //请求城市 当前1天内的舒适度信息
+            requestWeather(requestUrl,2); //请求城市 当前1天内的舒适度信息
         }
         else{
             showComfortInfo(comfortMessage);//有缓存时直接展示舒适度数据
         }
         if(airMessage==null){//处理空气质量数据
             String requestUrl="https://devapi.qweather.com/v7/air/now?location="+weatherId+"&key="+mysecrettoken; //设置请求数据的URL
-            requestWeather(requestUrl,3,countyname); //请求城市 当前空气质量信息
+            requestWeather(requestUrl,3); //请求城市 当前空气质量信息
         }
         else{
             showAirInfo(airMessage);//有缓存时直接展示空气质量数据
         }
+        if(countyName==null){ //处理县名数据
+            requestCountyName(weatherId,mysecrettoken); //请求县名数据
+        }
+        else{
+            showCountyName(countyName); //展示县名数据
+        }
         weatherLayout.setVisibility(View.VISIBLE); //设置滚动界面可见
+
+        //实现刷新框下拉刷新数据的功能逻辑
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather("https://devapi.qweather.com/v7/weather/now?location="+weatherId+"&key="+mysecrettoken,0);
+                requestWeather("https://devapi.qweather.com/v7/weather/7d?location="+weatherId+"&key="+mysecrettoken,1);
+                requestWeather("https://devapi.qweather.com/v7/indices/1d?type=1,2,8&location="+weatherId+"&key="+mysecrettoken,2);
+                requestWeather("https://devapi.qweather.com/v7/air/now?location="+weatherId+"&key="+mysecrettoken,3);
+            }
+        });
     }
 
-    //根据天气id请求城市天气信息
-    public void requestWeather(final String requestUrl,int saveData,String countyname){
+    //根据url请求城市天气信息
+    public void requestWeather(String requestUrl,int saveData){
         HttpUtil.sendOkHttpRequest(requestUrl, new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -125,6 +145,7 @@ public class WeatherActivity extends AppCompatActivity {
                     public void run() {
                         System.out.println("获取数据失败");
                         Toast.makeText(WeatherActivity.this,"获取数据失败",Toast.LENGTH_SHORT).show();
+                        swipeRefreshLayout.setRefreshing(false);//刷新实践结束，隐藏刷新进度条
                     }
                 });
             }
@@ -144,10 +165,9 @@ public class WeatherActivity extends AppCompatActivity {
                                 SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
                                 switch (saveData){
                                     case 0:
-                                        editor.putString("countyname",countyname);
                                         editor.putString("nowmessage",responseText); //向sharedpreferences中存储nowmessage信息
                                         editor.apply();
-                                        showNowWeatherInfo(responseText,countyname);
+                                        showNowWeatherInfo(responseText);
                                         break;
                                     case 1:
                                         editor.putString("forecastmessage",responseText);//向sharedpreferences中存储
@@ -170,6 +190,7 @@ public class WeatherActivity extends AppCompatActivity {
                                 Toast.makeText(WeatherActivity.this,"获取数据失败",Toast.LENGTH_SHORT).show();
                                 System.out.println("获取数据失败");
                             }
+                            swipeRefreshLayout.setRefreshing(false);//刷新实践结束，隐藏刷新进度条
                         }
                     });
                 }catch (Exception e){
@@ -180,8 +201,55 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
+    //根据weatherID请求查询存储城市姓名信息
+    public void requestCountyName(String weatherId,String mysecrettoken){
+        String requestNameUrl="https://geoapi.qweather.com/v2/city/lookup?location="+weatherId+"&key="+mysecrettoken;
+        HttpUtil.sendOkHttpRequest(requestNameUrl, new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                e.printStackTrace();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("获取城市姓名数据失败");
+                        Toast.makeText(WeatherActivity.this,"获取城市姓名数据失败",Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                final String nameResponseText=response.body().string();
+
+                try{
+                    JSONObject jsonObject=new JSONObject(nameResponseText); //用原生的jsonObject解析json数据
+                    String namestatuscode=jsonObject.getString("code"); //获取网络请求状态码
+                    if(!nameResponseText.isEmpty() && "200".equals(namestatuscode)){
+                        String countyname=jsonObject.getJSONArray("location").getJSONObject(0).getString("name");
+                        SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                        editor.putString("countyname",countyname);
+                        editor.apply();
+                        showCountyName(countyname);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    //展示当前城市姓名
+    private void showCountyName(String countyname){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                titleCity.setText(countyname);
+            }
+        });
+    }
+
     //展示当前实时天气数据
-    private void showNowWeatherInfo(String responsemessage,String countyname){
+    private void showNowWeatherInfo(String responsemessage){
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -191,7 +259,6 @@ public class WeatherActivity extends AppCompatActivity {
                     System.out.println(updateTime);
                     String degree=jsonObject.getJSONObject("now").getString("temp")+"℃"; //当前温度
                     String weatherInfo=jsonObject.getJSONObject("now").getString("text"); //当前天气
-                    titleCity.setText(countyname);
                     titleUpdateTime.setText(updateTime);
                     degreeText.setText(degree);
                     weatherInfoText.setText(weatherInfo);

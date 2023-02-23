@@ -101,7 +101,6 @@ public class ChooseAreaFragment extends Fragment {
                     {
                         Intent intent = new Intent(getActivity(), WeatherActivity.class);
                         intent.putExtra("weather_id",weatherId);
-                        intent.putExtra("countyname",countyname);
                         startActivity(intent);
                         getActivity().finish();
                     }
