@@ -74,14 +74,14 @@ public class WeatherActivity extends AppCompatActivity {
         swipeRefreshLayout=(SwipeRefreshLayout)findViewById(R.id.swipe_refresh);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
-        String countyName=prefs.getString("countyname",null); //县名
         String nowMessage=prefs.getString("nowmessage",null);  //实时天气类信息
         String forecastMessage=prefs.getString("forecastmessage",null); //7天预报信息
         String comfortMessage=prefs.getString("comfortmessage",null); //天气指数信息
         String airMessage=prefs.getString("airmessage",null); //空气质量信息
-
+        String weatherId=prefs.getString("weatherId",null);
+        String countyName=prefs.getString("countyname",null); //县名
         String mysecrettoken="你的token"; //个人的（和风天气）访问token
-        String weatherId=getIntent().getStringExtra("weather_id"); //获取weatherid
+//        String weatherId=getIntent().getStringExtra("weather_id"); //获取weatherid
         weatherLayout.setVisibility(View.INVISIBLE); //设置滚动界面不可见
         System.out.println("测试");
         System.out.println(weatherId);
@@ -114,12 +114,7 @@ public class WeatherActivity extends AppCompatActivity {
         else{
             showAirInfo(airMessage);//有缓存时直接展示空气质量数据
         }
-        if(countyName==null){ //处理县名数据
-            requestCountyName(weatherId,mysecrettoken); //请求县名数据
-        }
-        else{
-            showCountyName(countyName); //展示县名数据
-        }
+        showCountyName(countyName); //展示县名数据
         weatherLayout.setVisibility(View.VISIBLE); //设置滚动界面可见
 
         //实现刷新框下拉刷新数据的功能逻辑
@@ -130,6 +125,7 @@ public class WeatherActivity extends AppCompatActivity {
                 requestWeather("https://devapi.qweather.com/v7/weather/7d?location="+weatherId+"&key="+mysecrettoken,1);
                 requestWeather("https://devapi.qweather.com/v7/indices/1d?type=1,2,8&location="+weatherId+"&key="+mysecrettoken,2);
                 requestWeather("https://devapi.qweather.com/v7/air/now?location="+weatherId+"&key="+mysecrettoken,3);
+                Toast.makeText(WeatherActivity.this,"天气数据已更新到最新",Toast.LENGTH_SHORT).show(); //显示天气数据更新的提示
             }
         });
     }
@@ -201,42 +197,42 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
-    //根据weatherID请求查询存储城市姓名信息
-    public void requestCountyName(String weatherId,String mysecrettoken){
-        String requestNameUrl="https://geoapi.qweather.com/v2/city/lookup?location="+weatherId+"&key="+mysecrettoken;
-        HttpUtil.sendOkHttpRequest(requestNameUrl, new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                e.printStackTrace();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        System.out.println("获取城市姓名数据失败");
-                        Toast.makeText(WeatherActivity.this,"获取城市姓名数据失败",Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                final String nameResponseText=response.body().string();
-
-                try{
-                    JSONObject jsonObject=new JSONObject(nameResponseText); //用原生的jsonObject解析json数据
-                    String namestatuscode=jsonObject.getString("code"); //获取网络请求状态码
-                    if(!nameResponseText.isEmpty() && "200".equals(namestatuscode)){
-                        String countyname=jsonObject.getJSONArray("location").getJSONObject(0).getString("name");
-                        SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
-                        editor.putString("countyname",countyname);
-                        editor.apply();
-                        showCountyName(countyname);
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
+//    //根据weatherID请求查询存储城市姓名信息
+//    public void requestCountyName(String weatherId,String mysecrettoken){
+//        String requestNameUrl="https://geoapi.qweather.com/v2/city/lookup?location="+weatherId+"&key="+mysecrettoken;
+//        HttpUtil.sendOkHttpRequest(requestNameUrl, new Callback() {
+//            @Override
+//            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+//                e.printStackTrace();
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        System.out.println("获取城市姓名数据失败");
+//                        Toast.makeText(WeatherActivity.this,"获取城市姓名数据失败",Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//            }
+//
+//            @Override
+//            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+//                final String nameResponseText=response.body().string();
+//
+//                try{
+//                    JSONObject jsonObject=new JSONObject(nameResponseText); //用原生的jsonObject解析json数据
+//                    String namestatuscode=jsonObject.getString("code"); //获取网络请求状态码
+//                    if(!nameResponseText.isEmpty() && "200".equals(namestatuscode)){
+//                        String countyname=jsonObject.getJSONArray("location").getJSONObject(0).getString("name");
+//                        SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+//                        editor.putString("countyname",countyname);
+//                        editor.apply();
+//                        showCountyName(countyname);
+//                    }
+//                }catch (Exception e){
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
+//    }
 
     //展示当前城市姓名
     private void showCountyName(String countyname){

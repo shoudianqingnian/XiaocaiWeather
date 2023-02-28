@@ -3,8 +3,6 @@
     package="com.example.xiaocaiweather">
 
     <uses-permission android:name="android.permission.INTERNET" />
-<!--    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>-->
-<!--    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>-->
 
     <application
         android:name="org.litepal.LitePalApplication"
@@ -13,8 +11,13 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.XiaocaiWeather">
+        android:theme="@style/Theme.XiaocaiWeather"
+        android:usesCleartextTraffic="true">
+        <service
+            android:name=".service.AutoUpdateService"
+            android:enabled="true"
+            android:exported="true"></service>
+
         <activity
             android:name=".WeatherActivity"
             android:exported="false" />

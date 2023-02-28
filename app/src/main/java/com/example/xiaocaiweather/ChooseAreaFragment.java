@@ -94,13 +94,17 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties(); //请求县级数据并更新到界面上
                 }
                 else if(currentLevel == LEVEL_COUNTY)
-                {
+                {                    //确定具体县后，跳转到Weather界面
                     String weatherId = countyList.get(position).getWeatherId();
                     String countyname = countyList.get(position).getCountyName();
+                    SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(getContext()).edit();
+                    editor.putString("weatherId",weatherId);
+                    editor.putString("countyname",countyname);
+                    editor.apply();
                     if(getActivity() instanceof MainActivity)
                     {
                         Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                        intent.putExtra("weather_id",weatherId);
+//                        intent.putExtra("weather_id",weatherId);
                         startActivity(intent);
                         getActivity().finish();
                     }
