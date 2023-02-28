@@ -30,7 +30,7 @@ public class AutoUpdateService extends Service {
     private final static int SAVE_FORECASTMESSAGE=1;
     private final static int SAVE_COMFORTMESSAGE=2;
     private final static int SAVE_AIRMESSAGE=3;
-    String mysecrettoken="你的token"; //个人的（和风天气）访问token
+    String mysecrettoken=""; //个人的（和风天气）访问token
 
     public AutoUpdateService() {
     }

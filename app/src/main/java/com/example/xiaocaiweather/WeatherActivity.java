@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 
 import com.example.xiaocaiweather.gson.Weather;
 import com.example.xiaocaiweather.gson.WeatherNow;
+import com.example.xiaocaiweather.service.AutoUpdateService;
 import com.example.xiaocaiweather.util.HttpUtil;
 import com.example.xiaocaiweather.util.Utility;
 import com.google.gson.Gson;
@@ -80,11 +82,9 @@ public class WeatherActivity extends AppCompatActivity {
         String airMessage=prefs.getString("airmessage",null); //空气质量信息
         String weatherId=prefs.getString("weatherId",null);
         String countyName=prefs.getString("countyname",null); //县名
-        String mysecrettoken="你的token"; //个人的（和风天气）访问token
+        String mysecrettoken=""; //个人的（和风天气）访问token
 //        String weatherId=getIntent().getStringExtra("weather_id"); //获取weatherid
         weatherLayout.setVisibility(View.INVISIBLE); //设置滚动界面不可见
-        System.out.println("测试");
-        System.out.println(weatherId);
         //判断数据是否有缺失
         if(nowMessage==null){//处理实时天气数据
             String requestUrl="https://devapi.qweather.com/v7/weather/now?location="+weatherId+"&key="+mysecrettoken; //设置请求数据的URL
@@ -251,8 +251,7 @@ public class WeatherActivity extends AppCompatActivity {
             public void run() {
                 try {
                     JSONObject jsonObject=new JSONObject(responsemessage); //用原生的jsonObject解析json数据
-                    String updateTime=jsonObject.getString("updateTime").split("\\+")[1]; //更新时间？？？格式问题未解决
-                    System.out.println(updateTime);
+                    String updateTime=jsonObject.getString("updateTime").split("\\+")[1]; //更新时间
                     String degree=jsonObject.getJSONObject("now").getString("temp")+"℃"; //当前温度
                     String weatherInfo=jsonObject.getJSONObject("now").getString("text"); //当前天气
                     titleUpdateTime.setText(updateTime);
@@ -263,6 +262,8 @@ public class WeatherActivity extends AppCompatActivity {
                 }
             }
         });
+        Intent intent=new Intent(this, AutoUpdateService.class);
+        startService(intent); //每8小时（测试时为1分钟）就更新一下SharedPreference里面的数据
     }
 
     //展示预报天气数据：1个大难点（jsonArray）
@@ -276,10 +277,11 @@ public class WeatherActivity extends AppCompatActivity {
                     forecastLayout.removeAllViews();
                     for(int i=0;i<foreArrsy.length();i++){
                         JSONObject thisdayObject=foreArrsy.getJSONObject(i);
-//                        System.out.println(thisdayObject.getString("fxDate"));
-//                        System.out.println(thisdayObject.getString("textDay"));
-//                        System.out.println(thisdayObject.getString("tempMax"));
-//                        System.out.println(thisdayObject.getString("tempMin"));
+                        System.out.println(thisdayObject.getString("fxDate"));
+                        System.out.println(thisdayObject.getString("textDay"));
+                        System.out.println(thisdayObject.getString("tempMax"));
+                        System.out.println(thisdayObject.getString("tempMin"));
+                        System.out.println("#####");
                         View view= LayoutInflater.from(WeatherActivity.this).inflate(R.layout.forecast_item,forecastLayout,false); //???
                         //为天气预报界面的UI控件绑定id
                         TextView dateText=(TextView) findViewById(R.id.date_text);
